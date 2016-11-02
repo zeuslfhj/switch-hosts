@@ -1,0 +1,15 @@
+{
+    "name": "host-tools",
+    "version": "1.0.0",
+    "description": "use to switch hosts in windows",
+    "main": "switchHosts.js",
+    "bin": {
+        "switchHosts": "switchHosts.js"
+    },
+    "scripts": {},
+    "author": "zero",
+    "license": "MIT",
+    "dependencies": {
+        "yargs": "6.3.0"
+    }
+}
