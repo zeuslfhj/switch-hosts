@@ -46,7 +46,7 @@ function readConfig(cfgFilePath, envTags) {
  * @return {Array}          IP record array
  */
 function filterIPsFrom(envTags, data) {
-    if (!data || typeof data != "string") {
+    if (!data || typeof data != "string" || !envTags || !(envTags instanceof Array)) {
         return null;
     }
 
@@ -56,15 +56,44 @@ function filterIPsFrom(envTags, data) {
     }
 
     var ipRecords = [];
+    var recordsMap = {};
     lines.forEach(line => {
         line = line.trim();
-        var isMatch = validLine(envTags, line);
-        if (isMatch) {
-            ipRecords.push(line);
+        var tag = validLine(envTags, line);
+
+        if (tag) {
+            var arr = findOrCreateArrayFrom(recordsMap, tag);
+            arr.push(line);
         }
     });
 
-    return ipRecords;
+    envTags.forEach(tag => {
+        var arr = recordsMap[tag];
+        if (!arr) 
+            return;
+
+        ipRecords.push(arr);
+    });
+
+    return Array.prototype.concat.apply([], ipRecords);
+}
+
+/**
+ * find the array by key
+ * if array was not existed, then create and save it
+ * @param  {Object} map array map
+ * @param  {String} key key for getting or saving the array
+ * @return {Array}      result
+ */
+function findOrCreateArrayFrom(map, key) {
+    var arr = map[key];
+
+    if (!arr) {
+        arr = [];
+        map[key] = arr;
+    }
+
+    return arr;
 }
 
 /**
@@ -72,28 +101,32 @@ function filterIPsFrom(envTags, data) {
  *
  * @param  {Array}  envTags tags for matching
  * @param  {String} line    string value for matching
- * @return {boolean}        whether the line is matched tag or not
+ * @return {String}         matched tag
  */
 function validLine(envTags, line) {
-    if (!line || !envTags || !(envTags instanceof Array)) {
-        return false;
+    if (!line) {
+        return null;
     }
 
     if (line.startsWith("#")) {
-        return false;
+        return null;
     }
 
     if (envTags.indexOf(COMMON_ENV.ALL) >= 0) {
-        return true;
+        return COMMON_ENV.ALL;
     }
 
     let rets = envPicker.exec(line);
 
     if (rets && rets.length >= 2) {
-        return envTags.indexOf(rets[1]) >= 0;
+        var ret = envTags.indexOf(rets[1]);
+
+        if (ret >= 0) {
+            return envTags[ret];
+        }
     }
 
-    return false;
+    return null;
 }
 
 module.exports = readConfig;
