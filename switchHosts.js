@@ -4,6 +4,7 @@ const fs = require('fs');
 const readConfig = require('./configProcessor');
 const writeToHost = require('./hostWriter');
 const openFileEditor = require('./openFileEditor');
+const exec = require('child_process').exec;
 const argv = require('yargs')
     .usage('Usage: $0 -t tag1 tag2 or $0 -e')
     .option('t', {
@@ -63,6 +64,10 @@ function switchHost(envTags) {
         .then((config) => {
             return writeToHost(hostsFilePath, config);
         })
+        .then((ret) => {
+            flushSysDns();
+            return ret;
+        })
         .catch((err) => {
             console.error(
                 "switch host failed, you can use --log to display error information",
@@ -74,5 +79,11 @@ function clearHost() {
     var promise = writeToHost(hostsFilePath);
 
     promise.then(() => {console.log('clear success');})
+            .then(() => {flushSysDns();})
             .catch((err) => {console.error('clear failed', err);})
+}
+
+function flushSysDns() {
+    exec('ipconfig /flushdns');
+    console.log('flush dns success');
 }
